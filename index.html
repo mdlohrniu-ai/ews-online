@@ -238,6 +238,50 @@
     margin-top: 2px;
   }
 
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 380px; width: 100%;
+    box-shadow: var(--shadow);
+  }
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 20px; font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .modal-sub {
+    font-size: 13px; color: var(--ink-mute);
+    margin-bottom: 20px;
+  }
+  .modal-btn-row {
+    display: flex; gap: 10px; margin-top: 8px;
+  }
+  .modal-btn-row .login-btn { margin-top: 0; }
+  .cancel-btn {
+    flex-shrink: 0;
+    height: 48px;
+    padding: 0 18px;
+    background: none;
+    border: 1.5px solid var(--paper-3);
+    border-radius: 10px;
+    color: var(--ink-soft);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .cancel-btn:hover { border-color: var(--ink-soft); color: var(--ink); }
+
   .spinner {
     display: inline-block;
     width: 16px; height: 16px;
@@ -291,7 +335,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.0</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.1</div>
     </div>
   </div>
 
@@ -304,6 +348,30 @@
     </div>
 
     <div class="tiles fade-in" id="tiles-container"></div>
+  </div>
+
+  <!-- GRAMMAR UNIT SUBMISSION MODAL -->
+  <div class="modal-overlay" id="grammar-modal-overlay">
+    <div class="modal">
+      <h3>Submit Grammar Unit</h3>
+      <p class="modal-sub" id="grammar-modal-week">Loading…</p>
+
+      <div class="field">
+        <label class="field-label" for="grammar-main-input">Main Unit</label>
+        <input class="text-input" id="grammar-main-input" type="number" inputmode="numeric" placeholder="e.g. 12">
+      </div>
+      <div class="field">
+        <label class="field-label" for="grammar-bonus-input">Bonus Unit (optional)</label>
+        <input class="text-input" id="grammar-bonus-input" type="number" inputmode="numeric" placeholder="optional">
+      </div>
+
+      <div class="msg" id="grammar-modal-msg"></div>
+
+      <div class="modal-btn-row">
+        <button class="login-btn" id="grammar-submit-btn" onclick="submitGrammarUnit()">Save →</button>
+        <button class="cancel-btn" onclick="closeGrammarModal()">Cancel</button>
+      </div>
+    </div>
   </div>
 
 </main>
@@ -456,6 +524,25 @@ function showTiles() {
         url: quizUrl + '?student=' + studentParam
       });
     }
+
+    // Submit Grammar Unit — opens an in-page form instead of a link
+    const gwin = currentStudent.grammarWindow; // null = no schedule set, always open
+    const gLocked = gwin && !gwin.isOpen;
+    if (gLocked) {
+      tiles.push({
+        icon: '\u270E',
+        title: 'Submit Grammar Unit',
+        desc: 'Opens ' + gwin.openDay + ' ' + gwin.openTime + '.',
+        url: null
+      });
+    } else {
+      tiles.push({
+        icon: '\u270E',
+        title: 'Submit Grammar Unit',
+        desc: 'Choose the unit you want to study this week.',
+        onclick: 'openGrammarSubmitModal()'
+      });
+    }
   } else {
     tiles.push({
       icon: '✎',
@@ -474,6 +561,14 @@ function showTiles() {
 
   const container = document.getElementById('tiles-container');
   container.innerHTML = tiles.map(function(t) {
+    if (t.onclick) {
+      return '<div class="tile" onclick="' + t.onclick + '">' +
+        '<div class="tile-icon">' + t.icon + '</div>' +
+        '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
+        '<div class="tile-desc">' + escHtml(t.desc) + '</div></div>' +
+        '<div class="tile-arrow">→</div>' +
+        '</div>';
+    }
     if (!t.url) {
       return '<div class="tile disabled">' +
         '<div class="tile-icon">' + t.icon + '</div>' +
@@ -492,6 +587,107 @@ function showTiles() {
   document.getElementById('login-panel').style.display = 'none';
   document.getElementById('tiles-panel').style.display = 'block';
   document.getElementById('logout-btn').style.display = 'inline-block';
+}
+
+// ════════════════════════════════════════════════════════
+//  GRAMMAR UNIT SUBMISSION MODAL
+// ════════════════════════════════════════════════════════
+function showGrammarModalMsg(text) {
+  const el = document.getElementById('grammar-modal-msg');
+  el.textContent = text;
+  el.className = 'msg error show';
+}
+function hideGrammarModalMsg() {
+  document.getElementById('grammar-modal-msg').className = 'msg';
+}
+
+async function openGrammarSubmitModal() {
+  document.getElementById('grammar-modal-overlay').classList.add('show');
+  hideGrammarModalMsg();
+  document.getElementById('grammar-main-input').value = '';
+  document.getElementById('grammar-bonus-input').value = '';
+  document.getElementById('grammar-modal-week').textContent = 'Loading…';
+  const btn = document.getElementById('grammar-submit-btn');
+  btn.style.display = 'inline-block';
+  btn.disabled = true;
+
+  try {
+    const params = new URLSearchParams({
+      action: 'getGrammarSubmission',
+      studentNumber: currentStudent.studentNumber,
+      className: currentStudent.className
+    });
+    const res = await fetch(MASTER_LOGIN_URL + '?' + params.toString());
+    const data = await res.json();
+
+    if (data.error) {
+      document.getElementById('grammar-modal-week').textContent = '';
+      showGrammarModalMsg(data.error);
+      btn.style.display = 'none';
+      return;
+    }
+
+    currentStudent.grammarWindow = data.grammarWindow; // keep tile state fresh for next render
+    const win = data.grammarWindow;
+
+    if (win && !win.isOpen) {
+      document.getElementById('grammar-modal-week').textContent =
+        'Submission is closed. Opens again ' + win.openDay + ' ' + win.openTime + '.';
+      btn.style.display = 'none';
+      return;
+    }
+
+    btn.disabled = false;
+    document.getElementById('grammar-modal-week').textContent = data.week ? ('Week ' + data.week) : 'Choose your unit for this week.';
+    document.getElementById('grammar-main-input').value = data.mainUnit || '';
+    document.getElementById('grammar-bonus-input').value = data.bonusUnit || '';
+  } catch (err) {
+    document.getElementById('grammar-modal-week').textContent = '';
+    showGrammarModalMsg('Connection error. Please try again.');
+    btn.style.display = 'none';
+  }
+}
+
+function closeGrammarModal() {
+  document.getElementById('grammar-modal-overlay').classList.remove('show');
+}
+
+async function submitGrammarUnit() {
+  const main = document.getElementById('grammar-main-input').value.trim();
+  const bonus = document.getElementById('grammar-bonus-input').value.trim();
+  if (!main) { showGrammarModalMsg('Please enter a unit number.'); return; }
+
+  hideGrammarModalMsg();
+  const btn = document.getElementById('grammar-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Saving…';
+
+  try {
+    const params = new URLSearchParams({
+      action: 'submitGrammarUnit',
+      studentNumber: currentStudent.studentNumber,
+      studentName: currentStudent.nameEng,
+      className: currentStudent.className,
+      mainUnit: main,
+      bonusUnit: bonus
+    });
+    const res = await fetch(MASTER_LOGIN_URL + '?' + params.toString());
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = 'Save →';
+
+    if (data.error) { showGrammarModalMsg(data.error); return; }
+
+    if (data.ok) {
+      closeGrammarModal();
+      showTiles(); // refresh tile descriptions in case anything changed
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Save →';
+    showGrammarModalMsg('Connection error. Please try again.');
+  }
 }
 </script>
 </body>
