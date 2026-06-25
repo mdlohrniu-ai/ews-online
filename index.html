@@ -352,7 +352,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.5</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.6</div>
     </div>
   </div>
 
@@ -636,12 +636,12 @@ async function openGrammarSubmitModal() {
   document.getElementById('grammar-submit-status').textContent = '';
   document.getElementById('grammar-main-input').value = '';
   document.getElementById('grammar-bonus-input').value = '';
-  setGrammarFormBusy(false);
   const btn = document.getElementById('grammar-submit-btn');
   btn.textContent = 'Submit →';
   document.getElementById('grammar-modal-week').textContent = 'Loading…';
   btn.style.display = 'inline-block';
   btn.disabled = true;
+  setGrammarFormBusy(true);
 
   try {
     const params = new URLSearchParams({
@@ -678,6 +678,8 @@ async function openGrammarSubmitModal() {
     document.getElementById('grammar-modal-week').textContent = '';
     showGrammarModalMsg('Connection error. Please try again.');
     btn.style.display = 'none';
+  } finally {
+    setGrammarFormBusy(false);
   }
 }
 
