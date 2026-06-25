@@ -17,6 +17,8 @@
     --accent-lt: #dde7f7;
     --red: #b03030;
     --red-lt: #fce8e8;
+    --green: #2a7a4e;
+    --green-lt: #e3f3ea;
     --rule: rgba(26,26,46,0.10);
     --shadow: 0 2px 16px rgba(26,26,46,0.08);
   }
@@ -232,10 +234,18 @@
     border-color: var(--rule);
     transform: none;
   }
-  .tile-schedule-note {
-    font-size: 12px;
-    color: var(--ink-mute);
-    margin-top: 2px;
+  .tile.success {
+    background: var(--green-lt);
+    border-color: var(--green);
+  }
+  .tile.success:hover {
+    border-color: var(--green);
+  }
+  .tile-status {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+    margin-top: 4px;
   }
 
   /* ── MODAL ── */
@@ -342,7 +352,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.4</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.5</div>
     </div>
   </div>
 
@@ -547,14 +557,17 @@ function showTiles() {
       });
     } else {
       const gsub = currentStudent.grammarSubmission;
-      let desc = 'Choose the unit you want to study this week.';
-      if (gsub && gsub.submittedAt) desc += ' Submitted ' + gsub.submittedAt + '.';
-      tiles.push({
+      const tile = {
         icon: '\u270E',
         title: 'Submit Grammar Unit',
-        desc: desc,
+        desc: 'Choose the unit you want to study this week.',
         onclick: 'openGrammarSubmitModal()'
-      });
+      };
+      if (gsub && gsub.submittedAt) {
+        tile.success = true;
+        tile.statusText = '\u2713 Submitted ' + gsub.submittedAt;
+      }
+      tiles.push(tile);
     }
   } else {
     tiles.push({
@@ -574,11 +587,14 @@ function showTiles() {
 
   const container = document.getElementById('tiles-container');
   container.innerHTML = tiles.map(function(t) {
+    const statusHtml = t.statusText ? '<div class="tile-status">' + escHtml(t.statusText) + '</div>' : '';
+    const successClass = t.success ? ' success' : '';
+
     if (t.onclick) {
-      return '<div class="tile" onclick="' + t.onclick + '">' +
+      return '<div class="tile' + successClass + '" onclick="' + t.onclick + '">' +
         '<div class="tile-icon">' + t.icon + '</div>' +
         '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
-        '<div class="tile-desc">' + escHtml(t.desc) + '</div></div>' +
+        '<div class="tile-desc">' + escHtml(t.desc) + '</div>' + statusHtml + '</div>' +
         '<div class="tile-arrow">→</div>' +
         '</div>';
     }
@@ -589,10 +605,10 @@ function showTiles() {
         '<div class="tile-desc">' + escHtml(t.desc) + '</div></div>' +
         '</div>';
     }
-    return '<a class="tile" href="' + t.url + '" target="_blank" rel="noopener">' +
+    return '<a class="tile' + successClass + '" href="' + t.url + '" target="_blank" rel="noopener">' +
       '<div class="tile-icon">' + t.icon + '</div>' +
       '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
-      '<div class="tile-desc">' + escHtml(t.desc) + '</div></div>' +
+      '<div class="tile-desc">' + escHtml(t.desc) + '</div>' + statusHtml + '</div>' +
       '<div class="tile-arrow">→</div>' +
       '</a>';
   }).join('');
