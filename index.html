@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EWS Student Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --ink-soft: #4a4a6a;
+    --ink-mute: #8888aa;
+    --paper: #faf9f6;
+    --paper-2: #f2f0eb;
+    --paper-3: #e8e5de;
+    --accent: #2e5ba8;
+    --accent-lt: #dde7f7;
+    --red: #b03030;
+    --red-lt: #fce8e8;
+    --rule: rgba(26,26,46,0.10);
+    --shadow: 0 2px 16px rgba(26,26,46,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  header {
+    background: var(--ink);
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-mark {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .header-text h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 18px; font-weight: 600;
+    color: #fff;
+  }
+  .header-text p {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .logout-btn {
+    font-size: 12px; color: rgba(255,255,255,0.6);
+    background: none; border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px; padding: 6px 14px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    display: none;
+  }
+  .logout-btn:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  /* ── LOGIN ── */
+  .login-card {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    padding: 48px;
+    max-width: 400px;
+    margin: 0 auto;
+    box-shadow: var(--shadow);
+  }
+  .login-card h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px; font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .login-card .subtitle {
+    font-size: 13px;
+    color: var(--ink-mute);
+    margin-bottom: 28px;
+  }
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .field { margin-bottom: 16px; }
+  .text-input {
+    width: 100%;
+    height: 48px;
+    border: 1.5px solid var(--paper-3);
+    border-radius: 10px;
+    padding: 0 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .text-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-lt);
+  }
+  .login-btn {
+    width: 100%;
+    height: 48px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .login-btn:hover { background: #1f4690; }
+  .login-btn:active { transform: scale(0.99); }
+  .login-btn:disabled { background: var(--paper-3); color: var(--ink-mute); cursor: default; }
+
+  .msg {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+  .msg.error { background: var(--red-lt); color: var(--red); border: 1px solid #f5c0c0; }
+  .msg.show  { display: block; }
+
+  /* ── TILES ── */
+  #tiles-panel { display: none; }
+  .greeting {
+    margin-bottom: 32px;
+  }
+  .greeting h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px; font-weight: 600;
+  }
+  .greeting p {
+    font-size: 13px; color: var(--ink-mute); margin-top: 4px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--ink);
+    color: #fff;
+    letter-spacing: 0.04em;
+    margin-top: 8px;
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .tile {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 22px 26px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    text-decoration: none;
+    color: var(--ink);
+    box-shadow: var(--shadow);
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+  .tile:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .tile-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: var(--accent-lt);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .tile-text { flex: 1; min-width: 0; }
+  .tile-title {
+    font-family: 'Fraunces', serif;
+    font-size: 16px; font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .tile-desc {
+    font-size: 13px; color: var(--ink-mute);
+  }
+  .tile-arrow {
+    color: var(--ink-mute);
+    font-size: 1rem;
+    transition: color 0.2s, transform 0.2s;
+    flex-shrink: 0;
+  }
+  .tile:hover .tile-arrow { color: var(--accent); transform: translateX(3px); }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  @media (max-width: 600px) {
+    header { padding: 20px; }
+    .login-card { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-mark">EWS</div>
+    <div class="header-text">
+      <h1>Student Dashboard</h1>
+      <p>One login, everything in one place</p>
+    </div>
+  </div>
+  <button class="logout-btn" id="logout-btn" onclick="doLogout()">Sign out</button>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+  <div id="login-panel">
+    <div class="login-card fade-in">
+      <h2>Sign in</h2>
+      <p class="subtitle">Enter your student number to begin.</p>
+
+      <div class="field">
+        <label class="field-label" for="num-input">Student Number</label>
+        <input class="text-input" type="text" id="num-input" placeholder="e.g. 2511003" autocomplete="off" inputmode="numeric">
+      </div>
+
+      <div class="field" id="password-field" style="display:none">
+        <label class="field-label" for="pw-input">Password</label>
+        <input class="text-input" type="password" id="pw-input" placeholder="Your password" autocomplete="off">
+      </div>
+
+      <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
+      <div class="msg" id="login-msg"></div>
+    </div>
+  </div>
+
+  <!-- TILES -->
+  <div id="tiles-panel">
+    <div class="greeting fade-in">
+      <h2 id="greeting-name"></h2>
+      <p>Choose what you'd like to open.</p>
+      <span class="badge" id="greeting-class"></span>
+    </div>
+
+    <div class="tiles fade-in" id="tiles-container"></div>
+  </div>
+
+</main>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CONFIGURATION
+// ════════════════════════════════════════════════════════
+
+// Paste the Web App URL from the Master Login Apps Script here:
+const MASTER_LOGIN_URL = 'PASTE_YOUR_MASTER_LOGIN_WEB_APP_URL_HERE';
+
+// Tool URLs — edit these if a tool's address ever changes
+const TOOL_URLS = {
+  typingCheck:  'https://mdlohrniu-ai.github.io/typing-check/',
+  blogAnalysis: 'https://mdlohrniu-ai.github.io/ews-grammar-analysis/',
+  quizByClass: {
+    'EWSI':   'https://mdlohrniu-ai.github.io/grammarquiz/',
+    'EWSII':  'https://mdlohrniu-ai.github.io/grammarquizEWSII/',
+    'EWSIII': 'https://mdlohrniu-ai.github.io/grammarquizEWSIII/'
+  }
+};
+
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+let currentStudent = null; // { studentNumber, nameEng, nameJpn, className }
+
+// ════════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════════
+function showMsg(text) {
+  const el = document.getElementById('login-msg');
+  el.textContent = text;
+  el.className = 'msg error show';
+}
+function hideMsg() {
+  document.getElementById('login-msg').className = 'msg';
+}
+function setLoading(loading) {
+  const btn = document.getElementById('login-btn');
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spinner"></span>Checking…' : 'Continue →';
+}
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('num-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('pw-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ════════════════════════════════════════════════════════
+//  LOGIN
+// ════════════════════════════════════════════════════════
+async function doLogin() {
+  const num = document.getElementById('num-input').value.trim();
+  const pw  = document.getElementById('pw-input').value.trim();
+
+  if (!num) { showMsg('Please enter your student number.'); return; }
+
+  hideMsg();
+  setLoading(true);
+
+  try {
+    const params = new URLSearchParams({ action: 'login', studentNumber: num });
+    if (pw) params.set('password', pw);
+
+    const res = await fetch(MASTER_LOGIN_URL + '?' + params.toString());
+    const data = await res.json();
+
+    setLoading(false);
+
+    if (data.error) {
+      showMsg(data.error);
+      return;
+    }
+
+    if (data.requiresPassword) {
+      document.getElementById('password-field').style.display = 'block';
+      document.getElementById('pw-input').focus();
+      if (pw) showMsg('Incorrect password.');
+      else showMsg('This account is password-protected. Please enter your password.');
+      return;
+    }
+
+    if (data.ok) {
+      currentStudent = data;
+      showTiles();
+    }
+  } catch (err) {
+    setLoading(false);
+    showMsg('Connection error. Please try again.');
+  }
+}
+
+function doLogout() {
+  currentStudent = null;
+  document.getElementById('num-input').value = '';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('password-field').style.display = 'none';
+  hideMsg();
+  document.getElementById('login-panel').style.display = 'block';
+  document.getElementById('tiles-panel').style.display = 'none';
+  document.getElementById('logout-btn').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════
+//  TILES
+// ════════════════════════════════════════════════════════
+function showTiles() {
+  document.getElementById('greeting-name').textContent =
+    'Welcome, ' + (currentStudent.nameEng || currentStudent.studentNumber).split(' ')[0] + '!';
+  document.getElementById('greeting-class').textContent = currentStudent.className || '';
+
+  const quizUrl = TOOL_URLS.quizByClass[currentStudent.className] || null;
+
+  const studentParam = encodeURIComponent(currentStudent.studentNumber);
+
+  const tiles = [];
+
+  tiles.push({
+    icon: '⌨',
+    title: 'Typing Check',
+    desc: 'Timed typing exercise — speed and accuracy.',
+    url: TOOL_URLS.typingCheck + '?student=' + studentParam
+  });
+
+  if (quizUrl) {
+    tiles.push({
+      icon: '✎',
+      title: 'Weekly Grammar Quiz',
+      desc: 'Your class\u2019s grammar quiz (' + currentStudent.className + ').',
+      url: quizUrl + '?student=' + studentParam
+    });
+  } else {
+    tiles.push({
+      icon: '✎',
+      title: 'Weekly Grammar Quiz',
+      desc: 'No quiz found for class "' + (currentStudent.className || 'unknown') + '". Ask your teacher.',
+      url: null
+    });
+  }
+
+  tiles.push({
+    icon: '✍',
+    title: 'Blog Grammar Analysis',
+    desc: 'View grammar feedback on your blog entries.',
+    url: TOOL_URLS.blogAnalysis + '?student=' + studentParam
+  });
+
+  const container = document.getElementById('tiles-container');
+  container.innerHTML = tiles.map(function(t) {
+    if (!t.url) {
+      return '<div class="tile" style="opacity:0.5;cursor:default">' +
+        '<div class="tile-icon">' + t.icon + '</div>' +
+        '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
+        '<div class="tile-desc">' + escHtml(t.desc) + '</div></div>' +
+        '</div>';
+    }
+    return '<a class="tile" href="' + t.url + '" target="_blank" rel="noopener">' +
+      '<div class="tile-icon">' + t.icon + '</div>' +
+      '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
+      '<div class="tile-desc">' + escHtml(t.desc) + '</div></div>' +
+      '<div class="tile-arrow">→</div>' +
+      '</a>';
+  }).join('');
+
+  document.getElementById('login-panel').style.display = 'none';
+  document.getElementById('tiles-panel').style.display = 'block';
+  document.getElementById('logout-btn').style.display = 'inline-block';
+}
+</script>
+</body>
+</html>
