@@ -224,6 +224,19 @@
     flex-shrink: 0;
   }
   .tile:hover .tile-arrow { color: var(--accent); transform: translateX(3px); }
+  .tile.disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+  .tile.disabled:hover {
+    border-color: var(--rule);
+    transform: none;
+  }
+  .tile-schedule-note {
+    font-size: 12px;
+    color: var(--ink-mute);
+    margin-top: 2px;
+  }
 
   .spinner {
     display: inline-block;
@@ -278,6 +291,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.0</div>
     </div>
   </div>
 
@@ -423,12 +437,25 @@ function showTiles() {
   });
 
   if (quizUrl) {
-    tiles.push({
-      icon: '✎',
-      title: 'Weekly Grammar Quiz',
-      desc: 'Your class\u2019s grammar quiz (' + currentStudent.className + ').',
-      url: quizUrl + '?student=' + studentParam
-    });
+    const win = currentStudent.quizWindow; // null = no schedule set, always open
+    const isLocked = win && !win.isOpen;
+
+    if (isLocked) {
+      tiles.push({
+        icon: '✎',
+        title: 'Weekly Grammar Quiz',
+        desc: 'Opens ' + win.day + ', ' + win.start + '\u2013' + win.end + '.',
+        url: null
+      });
+    } else {
+      const openNote = win ? ' (open until ' + win.end + ')' : '';
+      tiles.push({
+        icon: '✎',
+        title: 'Weekly Grammar Quiz',
+        desc: 'Your class\u2019s grammar quiz (' + currentStudent.className + ')' + openNote + '.',
+        url: quizUrl + '?student=' + studentParam
+      });
+    }
   } else {
     tiles.push({
       icon: '✎',
@@ -448,7 +475,7 @@ function showTiles() {
   const container = document.getElementById('tiles-container');
   container.innerHTML = tiles.map(function(t) {
     if (!t.url) {
-      return '<div class="tile" style="opacity:0.5;cursor:default">' +
+      return '<div class="tile disabled">' +
         '<div class="tile-icon">' + t.icon + '</div>' +
         '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
         '<div class="tile-desc">' + escHtml(t.desc) + '</div></div>' +
