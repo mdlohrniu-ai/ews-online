@@ -281,6 +281,13 @@
     transition: border-color 0.2s, color 0.2s;
   }
   .cancel-btn:hover { border-color: var(--ink-soft); color: var(--ink); }
+  .modal-submit-status {
+    font-size: 13px;
+    color: #2a7a4e;
+    margin-top: 12px;
+    text-align: center;
+    min-height: 18px;
+  }
 
   .spinner {
     display: inline-block;
@@ -335,7 +342,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.1</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.4</div>
     </div>
   </div>
 
@@ -356,21 +363,24 @@
       <h3>Submit Grammar Unit</h3>
       <p class="modal-sub" id="grammar-modal-week">Loading…</p>
 
-      <div class="field">
-        <label class="field-label" for="grammar-main-input">Main Unit</label>
-        <input class="text-input" id="grammar-main-input" type="number" inputmode="numeric" placeholder="e.g. 12">
-      </div>
-      <div class="field">
-        <label class="field-label" for="grammar-bonus-input">Bonus Unit (optional)</label>
-        <input class="text-input" id="grammar-bonus-input" type="number" inputmode="numeric" placeholder="optional">
+      <div id="grammar-fields-wrap">
+        <div class="field">
+          <label class="field-label" for="grammar-main-input">Main Unit</label>
+          <input class="text-input" id="grammar-main-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 12" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="field-label" for="grammar-bonus-input">Bonus Unit (optional)</label>
+          <input class="text-input" id="grammar-bonus-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="optional" autocomplete="off">
+        </div>
       </div>
 
       <div class="msg" id="grammar-modal-msg"></div>
 
       <div class="modal-btn-row">
-        <button class="login-btn" id="grammar-submit-btn" onclick="submitGrammarUnit()">Save →</button>
-        <button class="cancel-btn" onclick="closeGrammarModal()">Cancel</button>
+        <button class="login-btn" id="grammar-submit-btn" onclick="submitGrammarUnit()">Submit →</button>
+        <button class="cancel-btn" id="grammar-cancel-btn" onclick="closeGrammarModal()">Cancel</button>
       </div>
+      <div id="grammar-submit-status" class="modal-submit-status"></div>
     </div>
   </div>
 
@@ -536,10 +546,13 @@ function showTiles() {
         url: null
       });
     } else {
+      const gsub = currentStudent.grammarSubmission;
+      let desc = 'Choose the unit you want to study this week.';
+      if (gsub && gsub.submittedAt) desc += ' Submitted ' + gsub.submittedAt + '.';
       tiles.push({
         icon: '\u270E',
         title: 'Submit Grammar Unit',
-        desc: 'Choose the unit you want to study this week.',
+        desc: desc,
         onclick: 'openGrammarSubmitModal()'
       });
     }
@@ -604,10 +617,13 @@ function hideGrammarModalMsg() {
 async function openGrammarSubmitModal() {
   document.getElementById('grammar-modal-overlay').classList.add('show');
   hideGrammarModalMsg();
+  document.getElementById('grammar-submit-status').textContent = '';
   document.getElementById('grammar-main-input').value = '';
   document.getElementById('grammar-bonus-input').value = '';
-  document.getElementById('grammar-modal-week').textContent = 'Loading…';
+  setGrammarFormBusy(false);
   const btn = document.getElementById('grammar-submit-btn');
+  btn.textContent = 'Submit →';
+  document.getElementById('grammar-modal-week').textContent = 'Loading…';
   btn.style.display = 'inline-block';
   btn.disabled = true;
 
@@ -628,6 +644,7 @@ async function openGrammarSubmitModal() {
     }
 
     currentStudent.grammarWindow = data.grammarWindow; // keep tile state fresh for next render
+    currentStudent.grammarSubmission = { week: data.week, submittedAt: data.submittedAt };
     const win = data.grammarWindow;
 
     if (win && !win.isOpen) {
@@ -652,15 +669,27 @@ function closeGrammarModal() {
   document.getElementById('grammar-modal-overlay').classList.remove('show');
 }
 
+function setGrammarFormBusy(busy) {
+  const wrap = document.getElementById('grammar-fields-wrap');
+  const cancelBtn = document.getElementById('grammar-cancel-btn');
+  wrap.style.opacity = busy ? '0.5' : '1';
+  wrap.style.pointerEvents = busy ? 'none' : 'auto';
+  document.getElementById('grammar-main-input').disabled = busy;
+  document.getElementById('grammar-bonus-input').disabled = busy;
+  cancelBtn.disabled = busy;
+  cancelBtn.style.opacity = busy ? '0.5' : '1';
+}
+
 async function submitGrammarUnit() {
   const main = document.getElementById('grammar-main-input').value.trim();
   const bonus = document.getElementById('grammar-bonus-input').value.trim();
   if (!main) { showGrammarModalMsg('Please enter a unit number.'); return; }
 
   hideGrammarModalMsg();
+  setGrammarFormBusy(true);
   const btn = document.getElementById('grammar-submit-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Saving…';
+  btn.innerHTML = '<span class="spinner"></span>Submitting…';
 
   try {
     const params = new URLSearchParams({
@@ -674,18 +703,21 @@ async function submitGrammarUnit() {
     const res = await fetch(MASTER_LOGIN_URL + '?' + params.toString());
     const data = await res.json();
 
+    setGrammarFormBusy(false);
     btn.disabled = false;
-    btn.textContent = 'Save →';
+    btn.textContent = 'Submit →';
 
     if (data.error) { showGrammarModalMsg(data.error); return; }
 
     if (data.ok) {
-      closeGrammarModal();
+      document.getElementById('grammar-submit-status').textContent = '✓ Submitted: ' + (data.savedAt || '');
+      currentStudent.grammarSubmission = { week: data.week, submittedAt: data.savedAt };
       showTiles(); // refresh tile descriptions in case anything changed
     }
   } catch (err) {
+    setGrammarFormBusy(false);
     btn.disabled = false;
-    btn.textContent = 'Save →';
+    btn.textContent = 'Submit →';
     showGrammarModalMsg('Connection error. Please try again.');
   }
 }
