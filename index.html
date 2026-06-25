@@ -352,7 +352,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.6</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.7</div>
     </div>
   </div>
 
@@ -638,6 +638,7 @@ async function openGrammarSubmitModal() {
   document.getElementById('grammar-bonus-input').value = '';
   const btn = document.getElementById('grammar-submit-btn');
   btn.textContent = 'Submit →';
+  document.getElementById('grammar-cancel-btn').textContent = 'Cancel';
   document.getElementById('grammar-modal-week').textContent = 'Loading…';
   btn.style.display = 'inline-block';
   btn.disabled = true;
@@ -729,6 +730,7 @@ async function submitGrammarUnit() {
 
     if (data.ok) {
       document.getElementById('grammar-submit-status').textContent = '✓ Submitted: ' + (data.savedAt || '');
+      document.getElementById('grammar-cancel-btn').textContent = 'Close';
       currentStudent.grammarSubmission = { week: data.week, submittedAt: data.savedAt };
       showTiles(); // refresh tile descriptions in case anything changed
     }
