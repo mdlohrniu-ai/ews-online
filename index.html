@@ -352,7 +352,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.7</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.8</div>
     </div>
   </div>
 
@@ -407,6 +407,7 @@ const MASTER_LOGIN_URL = 'https://script.google.com/macros/s/AKfycbys09mRRw7bocS
 // Tool URLs — edit these if a tool's address ever changes
 const TOOL_URLS = {
   typingCheck:  'https://mdlohrniu-ai.github.io/typing-check/',
+  weeklyForum:  'https://mdlohrniu-ai.github.io/ews-onlineforum/',
   blogAnalysis: 'https://mdlohrniu-ai.github.io/ews-grammar-analysis/',
   quizByClass: {
     'EWSI':   'https://mdlohrniu-ai.github.io/grammarquiz/',
@@ -522,6 +523,13 @@ function showTiles() {
     title: 'Typing Check',
     desc: 'Timed typing exercise — speed and accuracy.',
     url: TOOL_URLS.typingCheck + '?student=' + studentParam
+  });
+
+  tiles.push({
+    icon: '✉',
+    title: 'Weekly Forum',
+    desc: 'Blog post, comments, and replies for this week.',
+    url: TOOL_URLS.weeklyForum + '?student=' + studentParam
   });
 
   if (quizUrl) {
