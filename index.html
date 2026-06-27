@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EWS Student Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
   :root {
     --ink: #1a1a2e;
@@ -202,12 +203,11 @@
     transform: translateY(-1px);
   }
   .tile-icon {
-    width: 44px; height: 44px;
-    border-radius: 10px;
-    background: var(--accent-lt);
-    color: var(--accent);
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem;
+    font-size: 22px;
     flex-shrink: 0;
   }
   .tile-text { flex: 1; min-width: 0; }
@@ -352,7 +352,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.8</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v1.9</div>
     </div>
   </div>
 
@@ -519,14 +519,16 @@ function showTiles() {
   const tiles = [];
 
   tiles.push({
-    icon: '⌨',
+    icon: 'keyboard',
+    iconColor: '#2e5ba8',
     title: 'Typing Check',
     desc: 'Timed typing exercise — speed and accuracy.',
     url: TOOL_URLS.typingCheck + '?student=' + studentParam
   });
 
   tiles.push({
-    icon: '✉',
+    icon: 'message-2',
+    iconColor: '#b23a2e',
     title: 'Weekly Forum',
     desc: 'Blog post, comments, and replies for this week.',
     url: TOOL_URLS.weeklyForum + '?student=' + studentParam
@@ -538,7 +540,8 @@ function showTiles() {
 
     if (isLocked) {
       tiles.push({
-        icon: '✎',
+        icon: 'clipboard-text',
+        iconColor: '#c9a227',
         title: 'Weekly Grammar Quiz',
         desc: 'Opens ' + win.day + ', ' + win.start + '\u2013' + win.end + '.',
         url: null
@@ -546,7 +549,8 @@ function showTiles() {
     } else {
       const openNote = win ? ' (open until ' + win.end + ')' : '';
       tiles.push({
-        icon: '✎',
+        icon: 'clipboard-text',
+        iconColor: '#c9a227',
         title: 'Weekly Grammar Quiz',
         desc: 'Your class\u2019s grammar quiz (' + currentStudent.className + ')' + openNote + '.',
         url: quizUrl + '?student=' + studentParam
@@ -558,7 +562,8 @@ function showTiles() {
     const gLocked = gwin && !gwin.isOpen;
     if (gLocked) {
       tiles.push({
-        icon: '\u270E',
+        icon: 'send',
+        iconColor: '#3b6d11',
         title: 'Submit Grammar Unit',
         desc: 'Opens ' + gwin.openDay + ' ' + gwin.openTime + '.',
         url: null
@@ -566,7 +571,8 @@ function showTiles() {
     } else {
       const gsub = currentStudent.grammarSubmission;
       const tile = {
-        icon: '\u270E',
+        icon: 'send',
+        iconColor: '#3b6d11',
         title: 'Submit Grammar Unit',
         desc: 'Choose the unit you want to study this week.',
         onclick: 'openGrammarSubmitModal()'
@@ -579,7 +585,8 @@ function showTiles() {
     }
   } else {
     tiles.push({
-      icon: '✎',
+      icon: 'clipboard-text',
+      iconColor: '#c9a227',
       title: 'Weekly Grammar Quiz',
       desc: 'No quiz found for class "' + (currentStudent.className || 'unknown') + '". Ask your teacher.',
       url: null
@@ -587,7 +594,8 @@ function showTiles() {
   }
 
   tiles.push({
-    icon: '✍',
+    icon: 'search',
+    iconColor: '#534ab7',
     title: 'Blog Grammar Analysis',
     desc: 'View grammar feedback on your blog entries.',
     url: TOOL_URLS.blogAnalysis + '?student=' + studentParam
@@ -597,10 +605,12 @@ function showTiles() {
   container.innerHTML = tiles.map(function(t) {
     const statusHtml = t.statusText ? '<div class="tile-status">' + escHtml(t.statusText) + '</div>' : '';
     const successClass = t.success ? ' success' : '';
+    const iconHtml = '<div class="tile-icon" style="background:' + t.iconColor + '">' +
+      '<i class="ti ti-' + t.icon + '" aria-hidden="true"></i></div>';
 
     if (t.onclick) {
       return '<div class="tile' + successClass + '" onclick="' + t.onclick + '">' +
-        '<div class="tile-icon">' + t.icon + '</div>' +
+        iconHtml +
         '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
         '<div class="tile-desc">' + escHtml(t.desc) + '</div>' + statusHtml + '</div>' +
         '<div class="tile-arrow">→</div>' +
@@ -608,13 +618,13 @@ function showTiles() {
     }
     if (!t.url) {
       return '<div class="tile disabled">' +
-        '<div class="tile-icon">' + t.icon + '</div>' +
+        iconHtml +
         '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
         '<div class="tile-desc">' + escHtml(t.desc) + '</div></div>' +
         '</div>';
     }
     return '<a class="tile' + successClass + '" href="' + t.url + '" target="_blank" rel="noopener">' +
-      '<div class="tile-icon">' + t.icon + '</div>' +
+      iconHtml +
       '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
       '<div class="tile-desc">' + escHtml(t.desc) + '</div>' + statusHtml + '</div>' +
       '<div class="tile-arrow">→</div>' +
