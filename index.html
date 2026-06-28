@@ -355,7 +355,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v2.0</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v2.1</div>
     </div>
   </div>
 
@@ -444,6 +444,12 @@ function escHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+function isToolEnabled(toolName) {
+  const toggles = currentStudent.featureToggles || {};
+  const key = toolName.toLowerCase();
+  if (!(key in toggles)) return true; // not listed = enabled by default
+  return toggles[key] !== false;
+}
 
 document.getElementById('num-input').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') doLogin();
@@ -521,23 +527,44 @@ function showTiles() {
 
   const tiles = [];
 
-  tiles.push({
-    icon: 'keyboard',
-    iconColor: '#2e5ba8',
-    title: 'Typing Check',
-    desc: 'Timed typing exercise — speed and accuracy.',
-    url: TOOL_URLS.typingCheck + '?student=' + studentParam
-  });
+  if (isToolEnabled('Typing Check')) {
+    tiles.push({
+      icon: 'keyboard',
+      iconColor: '#2e5ba8',
+      title: 'Typing Check',
+      desc: 'Timed typing exercise — speed and accuracy.',
+      url: TOOL_URLS.typingCheck + '?student=' + studentParam
+    });
+  } else {
+    tiles.push({ icon: 'keyboard', iconColor: '#2e5ba8', title: 'Typing Check', desc: 'Not available yet.', url: null });
+  }
 
-  tiles.push({
-    icon: 'message-2',
-    iconColor: '#b23a2e',
-    title: 'Weekly Forum',
-    desc: 'Blog post, comments, and replies for this week.',
-    url: TOOL_URLS.weeklyForum + '?student=' + studentParam
-  });
+  if (isToolEnabled('Weekly Forum')) {
+    tiles.push({
+      icon: 'message-2',
+      iconColor: '#b23a2e',
+      title: 'Weekly Forum',
+      desc: 'Blog post, comments, and replies for this week.',
+      url: TOOL_URLS.weeklyForum + '?student=' + studentParam
+    });
+  } else {
+    tiles.push({ icon: 'message-2', iconColor: '#b23a2e', title: 'Weekly Forum', desc: 'Not available yet.', url: null });
+  }
 
-  if (quizUrl) {
+  const quizEnabled = isToolEnabled('Weekly Grammar Quiz');
+  const submitEnabled = isToolEnabled('Submit Grammar Unit');
+
+  if (!quizUrl) {
+    tiles.push({
+      icon: 'clipboard-text',
+      iconColor: '#c9a227',
+      title: 'Weekly Grammar Quiz',
+      desc: 'No quiz found for class "' + (currentStudent.className || 'unknown') + '". Ask your teacher.',
+      url: null
+    });
+  } else if (!quizEnabled) {
+    tiles.push({ icon: 'clipboard-text', iconColor: '#c9a227', title: 'Weekly Grammar Quiz', desc: 'Not available yet.', url: null });
+  } else {
     const win = currentStudent.quizWindow; // null = no schedule set, always open
     const isLocked = win && !win.isOpen;
 
@@ -559,50 +586,54 @@ function showTiles() {
         url: quizUrl + '?student=' + studentParam
       });
     }
-
-    // Submit Grammar Unit — opens an in-page form instead of a link
-    const gwin = currentStudent.grammarWindow; // null = no schedule set, always open
-    const gLocked = gwin && !gwin.isOpen;
-    if (gLocked) {
-      tiles.push({
-        icon: 'send',
-        iconColor: '#3b6d11',
-        title: 'Submit Grammar Unit',
-        desc: 'Opens ' + gwin.openDay + ' ' + gwin.openTime + '.',
-        url: null
-      });
-    } else {
-      const gsub = currentStudent.grammarSubmission;
-      const tile = {
-        icon: 'send',
-        iconColor: '#3b6d11',
-        title: 'Submit Grammar Unit',
-        desc: 'Choose the unit you want to study this week.',
-        onclick: 'openGrammarSubmitModal()'
-      };
-      if (gsub && gsub.submittedAt) {
-        tile.success = true;
-        tile.statusText = '\u2713 Submitted ' + gsub.submittedAt;
-      }
-      tiles.push(tile);
-    }
-  } else {
-    tiles.push({
-      icon: 'clipboard-text',
-      iconColor: '#c9a227',
-      title: 'Weekly Grammar Quiz',
-      desc: 'No quiz found for class "' + (currentStudent.className || 'unknown') + '". Ask your teacher.',
-      url: null
-    });
   }
 
-  tiles.push({
-    icon: 'search',
-    iconColor: '#534ab7',
-    title: 'Blog Grammar Analysis',
-    desc: 'View grammar feedback on your blog entries.',
-    url: TOOL_URLS.blogAnalysis + '?student=' + studentParam
-  });
+  // Submit Grammar Unit — toggled independently from the quiz above.
+  // Still needs the student's class to be a recognized one (same quizUrl check)
+  // since that's how we know which grammar sheet to read/write against.
+  if (quizUrl) {
+    if (!submitEnabled) {
+      tiles.push({ icon: 'send', iconColor: '#3b6d11', title: 'Submit Grammar Unit', desc: 'Not available yet.', url: null });
+    } else {
+      const gwin = currentStudent.grammarWindow; // null = no schedule set, always open
+      const gLocked = gwin && !gwin.isOpen;
+      if (gLocked) {
+        tiles.push({
+          icon: 'send',
+          iconColor: '#3b6d11',
+          title: 'Submit Grammar Unit',
+          desc: 'Opens ' + gwin.openDay + ' ' + gwin.openTime + '.',
+          url: null
+        });
+      } else {
+        const gsub = currentStudent.grammarSubmission;
+        const tile = {
+          icon: 'send',
+          iconColor: '#3b6d11',
+          title: 'Submit Grammar Unit',
+          desc: 'Choose the unit you want to study this week.',
+          onclick: 'openGrammarSubmitModal()'
+        };
+        if (gsub && gsub.submittedAt) {
+          tile.success = true;
+          tile.statusText = '\u2713 Submitted ' + gsub.submittedAt;
+        }
+        tiles.push(tile);
+      }
+    }
+  }
+
+  if (isToolEnabled('Blog Grammar Analysis')) {
+    tiles.push({
+      icon: 'search',
+      iconColor: '#534ab7',
+      title: 'Blog Grammar Analysis',
+      desc: 'View grammar feedback on your blog entries.',
+      url: TOOL_URLS.blogAnalysis + '?student=' + studentParam
+    });
+  } else {
+    tiles.push({ icon: 'search', iconColor: '#534ab7', title: 'Blog Grammar Analysis', desc: 'Not available yet.', url: null });
+  }
 
   const container = document.getElementById('tiles-container');
   container.innerHTML = tiles.map(function(t) {
