@@ -355,7 +355,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v2.1</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v2.2</div>
     </div>
   </div>
 
@@ -446,9 +446,12 @@ function escHtml(s) {
 }
 function isToolEnabled(toolName) {
   const toggles = currentStudent.featureToggles || {};
-  const key = toolName.toLowerCase();
-  if (!(key in toggles)) return true; // not listed = enabled by default
-  return toggles[key] !== false;
+  const toolKey = toolName.toLowerCase();
+  const classKey = (currentStudent.className || '').trim().toLowerCase();
+  if (!(toolKey in toggles)) return true; // tool not listed = enabled by default
+  const classMap = toggles[toolKey];
+  if (!(classKey in classMap)) return true; // class not listed for this tool = enabled by default
+  return classMap[classKey] !== false;
 }
 
 document.getElementById('num-input').addEventListener('keydown', function(e) {
