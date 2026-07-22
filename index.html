@@ -251,57 +251,6 @@
     margin-top: 4px;
   }
 
-  /* ── MODAL ── */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45);
-    display: none;
-    align-items: center; justify-content: center;
-    z-index: 200; padding: 20px;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal {
-    background: #fff;
-    border-radius: 16px;
-    padding: 32px;
-    max-width: 380px; width: 100%;
-    box-shadow: var(--shadow);
-  }
-  .modal h3 {
-    font-family: 'Fraunces', serif;
-    font-size: 20px; font-weight: 600;
-    margin-bottom: 6px;
-  }
-  .modal-sub {
-    font-size: 13px; color: var(--ink-mute);
-    margin-bottom: 20px;
-  }
-  .modal-btn-row {
-    display: flex; gap: 10px; margin-top: 8px;
-  }
-  .modal-btn-row .login-btn { margin-top: 0; }
-  .cancel-btn {
-    flex-shrink: 0;
-    height: 48px;
-    padding: 0 18px;
-    background: none;
-    border: 1.5px solid var(--paper-3);
-    border-radius: 10px;
-    color: var(--ink-soft);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
-  .cancel-btn:hover { border-color: var(--ink-soft); color: var(--ink); }
-  .modal-submit-status {
-    font-size: 13px;
-    color: #2a7a4e;
-    margin-top: 12px;
-    text-align: center;
-    min-height: 18px;
-  }
-
   .spinner {
     display: inline-block;
     width: 16px; height: 16px;
@@ -355,7 +304,7 @@
 
       <button class="login-btn" id="login-btn" onclick="doLogin()">Continue →</button>
       <div class="msg" id="login-msg"></div>
-      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v2.2</div>
+      <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-mute); font-family:'DM Sans',sans-serif; letter-spacing:0.06em;">v2.3</div>
     </div>
   </div>
 
@@ -368,33 +317,6 @@
     </div>
 
     <div class="tiles fade-in" id="tiles-container"></div>
-  </div>
-
-  <!-- GRAMMAR UNIT SUBMISSION MODAL -->
-  <div class="modal-overlay" id="grammar-modal-overlay">
-    <div class="modal">
-      <h3>Submit Grammar Unit</h3>
-      <p class="modal-sub" id="grammar-modal-week">Loading…</p>
-
-      <div id="grammar-fields-wrap">
-        <div class="field">
-          <label class="field-label" for="grammar-main-input">Main Unit</label>
-          <input class="text-input" id="grammar-main-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 12" autocomplete="off">
-        </div>
-        <div class="field">
-          <label class="field-label" for="grammar-bonus-input">Bonus Unit (optional)</label>
-          <input class="text-input" id="grammar-bonus-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="optional" autocomplete="off">
-        </div>
-      </div>
-
-      <div class="msg" id="grammar-modal-msg"></div>
-
-      <div class="modal-btn-row">
-        <button class="login-btn" id="grammar-submit-btn" onclick="submitGrammarUnit()">Submit →</button>
-        <button class="cancel-btn" id="grammar-cancel-btn" onclick="closeGrammarModal()">Cancel</button>
-      </div>
-      <div id="grammar-submit-status" class="modal-submit-status"></div>
-    </div>
   </div>
 
 </main>
@@ -411,7 +333,6 @@ const MASTER_LOGIN_URL = 'https://script.google.com/macros/s/AKfycbys09mRRw7bocS
 const TOOL_URLS = {
   typingCheck:  'https://mdlohrniu-ai.github.io/typing-check/',
   weeklyForum:  'https://mdlohrniu-ai.github.io/ews-onlineforum/',
-  blogAnalysis: 'https://mdlohrniu-ai.github.io/ews-grammar-analysis/',
   quizByClass: {
     'EWSI':   'https://mdlohrniu-ai.github.io/grammarquiz/',
     'EWSII':  'https://mdlohrniu-ai.github.io/grammarquizEWSII/',
@@ -534,12 +455,12 @@ function showTiles() {
     tiles.push({
       icon: 'keyboard',
       iconColor: '#2e5ba8',
-      title: 'Typing Check',
-      desc: 'Timed typing exercise — speed and accuracy.',
+      title: 'Typing Skills',
+      desc: 'Typing exercises to increase speed and accuracy.',
       url: TOOL_URLS.typingCheck + '?student=' + studentParam
     });
   } else {
-    tiles.push({ icon: 'keyboard', iconColor: '#2e5ba8', title: 'Typing Check', desc: 'Not available yet.', url: null });
+    tiles.push({ icon: 'keyboard', iconColor: '#2e5ba8', title: 'Typing Skills', desc: 'Not available yet.', url: null });
   }
 
   if (isToolEnabled('Weekly Forum')) {
@@ -547,7 +468,7 @@ function showTiles() {
       icon: 'message-2',
       iconColor: '#b23a2e',
       title: 'Weekly Forum',
-      desc: 'Blog post, comments, and replies for this week.',
+      desc: 'Blog posts and grammar analysis.',
       url: TOOL_URLS.weeklyForum + '?student=' + studentParam
     });
   } else {
@@ -591,51 +512,23 @@ function showTiles() {
     }
   }
 
-  // Submit Grammar Unit — toggled independently from the quiz above.
-  // Still needs the student's class to be a recognized one (same quizUrl check)
-  // since that's how we know which grammar sheet to read/write against.
+  // Submit Grammar Unit — forwards straight to the Forum's own grammar flow.
+  // The Forum now owns all deadline / already-submitted status logic itself
+  // (Schedule tab's own deadline, Forum-native UnitSubmissions record) — no
+  // independent status check here anymore, so this tile can never show
+  // something that contradicts what the Forum page itself displays.
   if (quizUrl) {
     if (!submitEnabled) {
       tiles.push({ icon: 'send', iconColor: '#3b6d11', title: 'Submit Grammar Unit', desc: 'Not available yet.', url: null });
     } else {
-      const gwin = currentStudent.grammarWindow; // null = no schedule set, always open
-      const gLocked = gwin && !gwin.isOpen;
-      if (gLocked) {
-        tiles.push({
-          icon: 'send',
-          iconColor: '#3b6d11',
-          title: 'Submit Grammar Unit',
-          desc: 'Opens ' + gwin.openDay + ' ' + gwin.openTime + '.',
-          url: null
-        });
-      } else {
-        const gsub = currentStudent.grammarSubmission;
-        const tile = {
-          icon: 'send',
-          iconColor: '#3b6d11',
-          title: 'Submit Grammar Unit',
-          desc: 'Choose the unit you want to study this week.',
-          onclick: 'openGrammarSubmitModal()'
-        };
-        if (gsub && gsub.submittedAt) {
-          tile.success = true;
-          tile.statusText = '\u2713 Submitted ' + gsub.submittedAt;
-        }
-        tiles.push(tile);
-      }
+      tiles.push({
+        icon: 'send',
+        iconColor: '#3b6d11',
+        title: 'Submit Grammar Unit',
+        desc: 'Choose your grammar unit and see your blog analysis in the Forum.',
+        url: TOOL_URLS.weeklyForum + '?student=' + studentParam + '&goto=grammar'
+      });
     }
-  }
-
-  if (isToolEnabled('Blog Grammar Analysis')) {
-    tiles.push({
-      icon: 'search',
-      iconColor: '#534ab7',
-      title: 'Blog Grammar Analysis',
-      desc: 'View grammar feedback on your blog entries.',
-      url: TOOL_URLS.blogAnalysis + '?student=' + studentParam
-    });
-  } else {
-    tiles.push({ icon: 'search', iconColor: '#534ab7', title: 'Blog Grammar Analysis', desc: 'Not available yet.', url: null });
   }
 
   const container = document.getElementById('tiles-container');
@@ -645,14 +538,6 @@ function showTiles() {
     const iconHtml = '<div class="tile-icon" style="background:' + t.iconColor + '">' +
       '<i class="ti ti-' + t.icon + '" aria-hidden="true"></i></div>';
 
-    if (t.onclick) {
-      return '<div class="tile' + successClass + '" onclick="' + t.onclick + '">' +
-        iconHtml +
-        '<div class="tile-text"><div class="tile-title">' + escHtml(t.title) + '</div>' +
-        '<div class="tile-desc">' + escHtml(t.desc) + '</div>' + statusHtml + '</div>' +
-        '<div class="tile-arrow">→</div>' +
-        '</div>';
-    }
     if (!t.url) {
       return '<div class="tile disabled">' +
         iconHtml +
@@ -671,130 +556,6 @@ function showTiles() {
   document.getElementById('login-panel').style.display = 'none';
   document.getElementById('tiles-panel').style.display = 'block';
   document.getElementById('logout-btn').style.display = 'inline-block';
-}
-
-// ════════════════════════════════════════════════════════
-//  GRAMMAR UNIT SUBMISSION MODAL
-// ════════════════════════════════════════════════════════
-function showGrammarModalMsg(text) {
-  const el = document.getElementById('grammar-modal-msg');
-  el.textContent = text;
-  el.className = 'msg error show';
-}
-function hideGrammarModalMsg() {
-  document.getElementById('grammar-modal-msg').className = 'msg';
-}
-
-async function openGrammarSubmitModal() {
-  document.getElementById('grammar-modal-overlay').classList.add('show');
-  hideGrammarModalMsg();
-  document.getElementById('grammar-submit-status').textContent = '';
-  document.getElementById('grammar-main-input').value = '';
-  document.getElementById('grammar-bonus-input').value = '';
-  const btn = document.getElementById('grammar-submit-btn');
-  btn.textContent = 'Submit →';
-  document.getElementById('grammar-cancel-btn').textContent = 'Cancel';
-  document.getElementById('grammar-modal-week').textContent = 'Loading…';
-  btn.style.display = 'inline-block';
-  btn.disabled = true;
-  setGrammarFormBusy(true);
-
-  try {
-    const params = new URLSearchParams({
-      action: 'getGrammarSubmission',
-      studentNumber: currentStudent.studentNumber,
-      className: currentStudent.className
-    });
-    const res = await fetch(MASTER_LOGIN_URL + '?' + params.toString());
-    const data = await res.json();
-
-    if (data.error) {
-      document.getElementById('grammar-modal-week').textContent = '';
-      showGrammarModalMsg(data.error);
-      btn.style.display = 'none';
-      return;
-    }
-
-    currentStudent.grammarWindow = data.grammarWindow; // keep tile state fresh for next render
-    currentStudent.grammarSubmission = { week: data.week, submittedAt: data.submittedAt };
-    const win = data.grammarWindow;
-
-    if (win && !win.isOpen) {
-      document.getElementById('grammar-modal-week').textContent =
-        'Submission is closed. Opens again ' + win.openDay + ' ' + win.openTime + '.';
-      btn.style.display = 'none';
-      return;
-    }
-
-    btn.disabled = false;
-    document.getElementById('grammar-modal-week').textContent = data.week ? ('Week ' + data.week) : 'Choose your unit for this week.';
-    document.getElementById('grammar-main-input').value = data.mainUnit || '';
-    document.getElementById('grammar-bonus-input').value = data.bonusUnit || '';
-  } catch (err) {
-    document.getElementById('grammar-modal-week').textContent = '';
-    showGrammarModalMsg('Connection error. Please try again.');
-    btn.style.display = 'none';
-  } finally {
-    setGrammarFormBusy(false);
-  }
-}
-
-function closeGrammarModal() {
-  document.getElementById('grammar-modal-overlay').classList.remove('show');
-}
-
-function setGrammarFormBusy(busy) {
-  const wrap = document.getElementById('grammar-fields-wrap');
-  const cancelBtn = document.getElementById('grammar-cancel-btn');
-  wrap.style.opacity = busy ? '0.5' : '1';
-  wrap.style.pointerEvents = busy ? 'none' : 'auto';
-  document.getElementById('grammar-main-input').disabled = busy;
-  document.getElementById('grammar-bonus-input').disabled = busy;
-  cancelBtn.disabled = busy;
-  cancelBtn.style.opacity = busy ? '0.5' : '1';
-}
-
-async function submitGrammarUnit() {
-  const main = document.getElementById('grammar-main-input').value.trim();
-  const bonus = document.getElementById('grammar-bonus-input').value.trim();
-  if (!main) { showGrammarModalMsg('Please enter a unit number.'); return; }
-
-  hideGrammarModalMsg();
-  setGrammarFormBusy(true);
-  const btn = document.getElementById('grammar-submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Submitting…';
-
-  try {
-    const params = new URLSearchParams({
-      action: 'submitGrammarUnit',
-      studentNumber: currentStudent.studentNumber,
-      studentName: currentStudent.nameEng,
-      className: currentStudent.className,
-      mainUnit: main,
-      bonusUnit: bonus
-    });
-    const res = await fetch(MASTER_LOGIN_URL + '?' + params.toString());
-    const data = await res.json();
-
-    setGrammarFormBusy(false);
-    btn.disabled = false;
-    btn.textContent = 'Submit →';
-
-    if (data.error) { showGrammarModalMsg(data.error); return; }
-
-    if (data.ok) {
-      document.getElementById('grammar-submit-status').textContent = '✓ Submitted: ' + (data.savedAt || '');
-      document.getElementById('grammar-cancel-btn').textContent = 'Close';
-      currentStudent.grammarSubmission = { week: data.week, submittedAt: data.savedAt };
-      showTiles(); // refresh tile descriptions in case anything changed
-    }
-  } catch (err) {
-    setGrammarFormBusy(false);
-    btn.disabled = false;
-    btn.textContent = 'Submit →';
-    showGrammarModalMsg('Connection error. Please try again.');
-  }
 }
 </script>
 </body>
